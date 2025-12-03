@@ -131,7 +131,7 @@ if __name__ == '__main__':
         ),
         # tf.keras.callbacks.EarlyStopping(patience=10, verbose=1),
         tf.keras.callbacks.ModelCheckpoint(
-            filepath=xp_dir/'checkpoints/epoch{epoch}', save_best_only=False, verbose=1
+            filepath=xp_dir/'checkpoints/epoch{epoch}.keras', save_best_only=False, verbose=1
         ),
         tf.keras.callbacks.CSVLogger(
             filename=(xp_dir/'fit_logs.csv')
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     print(model.summary())
 
     # get optimizer, loss, and compile model for training
-    optimizer = tf.keras.optimizers.Adam(lr=config.lr)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=config.lr)
 
     # compute class weights for the loss: inverse-frequency balanced
     # note: we set to 0 the weights for the classes "no_data"(0) and "clouds"(1) to ignore these
