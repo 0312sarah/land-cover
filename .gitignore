@@ -9,6 +9,4 @@ experiments/
 __pycache__/
 .ipynb_checkpoints/
 
-# Environnement conda
-env/
-*.yml
+
