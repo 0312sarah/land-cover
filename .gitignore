@@ -2,6 +2,14 @@
 # Data (trop lourd)
 # ===============================
 data/
+pytorch_experiments/dataset/
+
+# =====================
+# Outputs d'entraînement
+# =====================
+pytorch_experiments/runs/
+experiments/
+
 
 # ===============================
 # TensorFlow baseline outputs
