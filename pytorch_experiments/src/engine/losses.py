@@ -15,6 +15,7 @@ def build_loss(loss_cfg: Optional[dict], num_classes: Optional[int] = None, devi
     name = str(loss_cfg.get("name", "cross_entropy")).lower()
 
     if name == "cross_entropy":
+        loss_kwargs = {}
         weight = loss_cfg.get("weight")
         if weight is not None:
             if num_classes is not None and len(weight) != num_classes:
@@ -22,10 +23,12 @@ def build_loss(loss_cfg: Optional[dict], num_classes: Optional[int] = None, devi
             weight = torch.tensor(weight, dtype=torch.float32)
             if device is not None:
                 weight = weight.to(device)
+            loss_kwargs["weight"] = weight
         ignore_index = loss_cfg.get("ignore_index")
         if ignore_index is not None:
-            ignore_index = int(ignore_index)
-        criterion = nn.CrossEntropyLoss(weight=weight, ignore_index=ignore_index)
+            loss_kwargs["ignore_index"] = int(ignore_index)
+
+        criterion = nn.CrossEntropyLoss(**loss_kwargs)
         if device is not None:
             criterion = criterion.to(device)
         return criterion

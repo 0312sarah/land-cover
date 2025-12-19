@@ -31,7 +31,7 @@ class Trainer:
 
         # AMP only makes sense on CUDA
         self.use_amp = bool(cfg["train"].get("amp", True)) and (self.device.type == "cuda")
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
+        self.scaler = torch.amp.GradScaler(device_type="cuda", enabled=self.use_amp)
 
         # ----- data / transforms
         aug_cfg = cfg.get("augmentation", {})
@@ -167,7 +167,7 @@ class Trainer:
             images = images.to(self.device, non_blocking=True)
             masks = masks.to(self.device, non_blocking=True)
 
-            with torch.cuda.amp.autocast(enabled=self.use_amp):
+            with torch.amp.autocast(device_type=self.device.type, enabled=self.use_amp):
                 logits = self.model(images)
                 loss = self.criterion(logits, masks)
 
@@ -206,7 +206,7 @@ class Trainer:
 
                 self.optim.zero_grad(set_to_none=True)
 
-                with torch.cuda.amp.autocast(enabled=self.use_amp):
+                with torch.amp.autocast(device_type=self.device.type, enabled=self.use_amp):
                     logits = self.model(images)
                     loss = self.criterion(logits, masks)
 
