@@ -5,6 +5,7 @@ import csv
 
 import torch
 import torch.nn as nn
+import torch.backends.cudnn as cudnn
 from torch.optim import AdamW
 from torch.utils.tensorboard import SummaryWriter
 
@@ -18,6 +19,7 @@ class Trainer:
         self.run_dir = Path(run_dir)
 
         # ----- device (CUDA if available, else CPU)
+        cudnn.benchmark = True  # choose optimal kernels for fixed input sizes
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # AMP only makes sense on CUDA

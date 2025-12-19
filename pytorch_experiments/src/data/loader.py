@@ -21,6 +21,8 @@ def build_dataloader(
         shuffle=shuffle,
         num_workers=num_workers,
         pin_memory=True,
+        persistent_workers=num_workers > 0,
+        prefetch_factor=2,
         drop_last=False,
     )
     return dl
@@ -55,6 +57,8 @@ def build_train_val_loaders(
         shuffle=True,
         num_workers=num_workers,
         pin_memory=True,
+        persistent_workers=num_workers > 0,
+        prefetch_factor=2,
         drop_last=False,
     )
     val_loader = DataLoader(
@@ -63,6 +67,8 @@ def build_train_val_loaders(
         shuffle=False,
         num_workers=num_workers,
         pin_memory=True,
+        persistent_workers=num_workers > 0,
+        prefetch_factor=2,
         drop_last=False,
     )
     return train_loader, val_loader
