@@ -58,7 +58,7 @@ scheduler:
   min_lr: 0.0
 
 train:
-  epochs: 20
+  epochs: 1
   amp: true
   log_every: 10
   val_each_log: true
