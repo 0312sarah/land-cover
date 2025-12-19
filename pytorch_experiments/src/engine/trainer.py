@@ -221,8 +221,12 @@ class Trainer:
 
                 if global_step % log_every == 0:
                     if self.val_loader is not None and val_each_log:
-                        last_val_loss = self._run_validation()
-                        self.writer.add_scalar("val/loss", last_val_loss, global_step)
+                        v_loss, v_metrics = self._run_validation()
+                        last_val_loss = v_loss
+                        self.writer.add_scalar("val/loss", v_loss, global_step)
+                        self.writer.add_scalar("val/miou", v_metrics["mean"]["miou"], global_step)
+                        self.writer.add_scalar("val/precision", v_metrics["mean"]["precision"], global_step)
+                        self.writer.add_scalar("val/recall", v_metrics["mean"]["recall"], global_step)
 
                     val_loss_str = f"{last_val_loss:.4f}" if last_val_loss is not None else "N/A"
                     print(
