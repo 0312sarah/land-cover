@@ -2,8 +2,8 @@ seed: 42
 
 data:
   root: dataset
-  num_workers: 0
-  batch_size: 4
+  num_workers: 8
+  batch_size: 32
 
 model:
   name: unet
