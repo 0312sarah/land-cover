@@ -71,20 +71,31 @@ class Trainer:
 
         self.csv_path = self.run_dir / "logs.csv"
         self._init_csv()
+        self._dump_config_txt()
 
     def _init_csv(self):
         if not self.csv_path.exists():
             with open(self.csv_path, "w", newline="", encoding="utf-8") as f:
                 w = csv.writer(f)
-                w.writerow(["epoch", "global_step", "split", "loss"])
+                w.writerow(["epoch", "train_loss", "val_loss"])
 
-    def _log_csv(self, epoch: int, global_step: int, split: str, loss: float):
+    def _log_epoch(self, epoch: int, train_loss: float, val_loss: float | None):
         with open(self.csv_path, "a", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            w.writerow([epoch, global_step, split, float(loss)])
+            w.writerow([epoch, float(train_loss), float(val_loss) if val_loss is not None else ""])
+
+    def _dump_config_txt(self):
+        cfg_txt_path = self.run_dir / "config.txt"
+        if cfg_txt_path.exists():
+            return
+        import yaml  # local import to avoid polluting module scope
+        with open(cfg_txt_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(self.cfg, f, sort_keys=False)
 
     @torch.no_grad()
-    def _validate_epoch(self) -> float:
+    def _run_validation(self) -> float:
+        """Full pass on val loader and restore training mode afterwards."""
+        prev_mode = self.model.training
         self.model.eval()
         total_loss = 0.0
         n_batches = 0
@@ -100,11 +111,15 @@ class Trainer:
             total_loss += float(loss.item())
             n_batches += 1
 
+        if prev_mode:
+            self.model.train()
+
         return total_loss / max(n_batches, 1)
 
     def fit(self):
         epochs = int(self.cfg["train"]["epochs"])
         log_every = int(self.cfg["train"].get("log_every", 50))
+        val_each_log = bool(self.cfg["train"].get("val_each_log", True))
 
         global_step = 0
         last_val_loss = None
@@ -113,6 +128,8 @@ class Trainer:
             self.model.train()
             steps_per_epoch = len(self.train_loader)
             last_train_loss = None
+            train_loss_sum = 0.0
+            train_loss_count = 0
 
             for step, (images, masks) in enumerate(self.train_loader, start=1):
                 images = images.to(self.device, non_blocking=True)
@@ -130,23 +147,27 @@ class Trainer:
 
                 global_step += 1
                 last_train_loss = float(loss.item())
+                train_loss_sum += last_train_loss
+                train_loss_count += 1
 
                 if global_step % log_every == 0:
+                    if self.val_loader is not None and val_each_log:
+                        last_val_loss = self._run_validation()
+                        self.writer.add_scalar("val/loss", last_val_loss, global_step)
+
                     val_loss_str = f"{last_val_loss:.4f}" if last_val_loss is not None else "N/A"
                     print(
                         f"epoch : ({epoch}/{epochs}) | step : ({step}/{steps_per_epoch}) | "
                         f"train loss : {last_train_loss:.4f} | val loss : {val_loss_str}"
                     )
 
-                    self._log_csv(epoch=epoch, global_step=global_step, split="train", loss=last_train_loss)
                     self.writer.add_scalar("train/loss", last_train_loss, global_step)
 
             val_loss = None
             if self.val_loader is not None:
-                val_loss = self._validate_epoch()
+                val_loss = self._run_validation()
                 last_val_loss = val_loss
                 self.writer.add_scalar("val/loss", val_loss, global_step)
-                self._log_csv(epoch=epoch, global_step=global_step, split="val", loss=val_loss)
                 train_loss_str = f"{last_train_loss:.4f}" if last_train_loss is not None else "N/A"
                 print(
                     f"epoch : ({epoch}/{epochs}) | step : ({steps_per_epoch}/{steps_per_epoch}) | "
@@ -165,5 +186,12 @@ class Trainer:
                 ckpt_path,
             )
             print(f"[OK] saved checkpoint: {ckpt_path}")
+
+            # epoch-level logging
+            avg_train_loss = train_loss_sum / max(train_loss_count, 1)
+            self._log_epoch(epoch=epoch, train_loss=avg_train_loss, val_loss=val_loss)
+            self.writer.add_scalar("train/epoch_loss", avg_train_loss, epoch)
+            if val_loss is not None:
+                self.writer.add_scalar("val/epoch_loss", val_loss, epoch)
 
         self.writer.close()

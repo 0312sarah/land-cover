@@ -23,6 +23,7 @@ train:
   epochs: 2
   amp: true
   log_every: 1
+  val_each_log: true
 
 output:
   runs_dir: runs
