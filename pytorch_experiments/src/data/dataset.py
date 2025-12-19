@@ -6,11 +6,12 @@ from torch.utils.data import Dataset
 import tifffile 
 
 class LandCoverDataset(Dataset):
-    def __init__(self, root: str | Path, split: str = "train"):
+    def __init__(self, root: str | Path, split: str = "train", transform=None, files=None):
         self.root = Path(root)
         self.split = split
         self.label_map = {lab: lab - 1 for lab in range(1, 10)}
         self.num_classes = 9
+        self.transform = transform
 
         assert split in {"train", "test"}
 
@@ -19,7 +20,7 @@ class LandCoverDataset(Dataset):
         if split == "train":
             self.mask_dir = self.root / split / "masks"
 
-        self.images_files = sorted(self.images_dir.glob("*.tif"))
+        self.images_files = sorted(files) if files is not None else sorted(self.images_dir.glob("*.tif"))
         if len(self.images_files) == 0:
             raise FileNotFoundError(f"No .tif found in {self.images_dir}")
 
@@ -50,7 +51,13 @@ class LandCoverDataset(Dataset):
 
             mask = torch.from_numpy(mapped).long()
 
+            if self.transform is not None:
+                image, mask = self.transform(image, mask)
+
             return image,mask
+
+        if self.transform is not None:
+            image, _ = self.transform(image, None)
 
         return image 
 
