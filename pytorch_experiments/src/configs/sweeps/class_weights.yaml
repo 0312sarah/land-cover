@@ -31,7 +31,7 @@ optim: {lr: 1e-3, weight_decay: 1e-4}
 
 loss:
   name: cross_entropy
-  weight: [10.0, 1.0, 0.3, 0.4, 0.8, 0.35, 2.5, 10.0, 1.5]
+  weight: [1.81, 0.92, 0.27, 0.36, 0.72, 0.31, 1.56, 1.81, 1.23]
   ignore_index:
 
 scheduler:
