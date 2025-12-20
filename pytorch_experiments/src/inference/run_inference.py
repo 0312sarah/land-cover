@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 import yaml
+import pandas as pd
 
 import torch
 from torch.utils.data import DataLoader
@@ -61,26 +62,50 @@ def run_inference(cfg: dict):
     model = _load_model(cfg, device=device)
 
     # output
-    out_dir = Path(cfg["output"]["dir"])
-    out_dir.mkdir(parents=True, exist_ok=True)
-    map_to_original = bool(cfg["output"].get("map_to_original_labels", True))
+    output_cfg = cfg.get("output", {}) or {}
+    save_masks = bool(output_cfg.get("save_masks", False))
+    masks_dir = Path(output_cfg.get("masks_dir", "runs/inference_preds/masks"))
+    if save_masks:
+        masks_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = Path(output_cfg.get("csv_path", "runs/inference_preds/predictions.csv"))
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    map_to_original = bool(output_cfg.get("map_to_original_labels", True))
+    num_classes = cfg["model"].get("num_classes", 9)
+    class_names = output_cfg.get("class_names") or [f"class_{i+1}" for i in range(num_classes)]
 
+    rows = []
     idx_base = 0
     for batch_idx, images in enumerate(loader):
         images = images.to(device, non_blocking=True)
         logits = model(images)
         preds = torch.argmax(logits, dim=1)
-        if map_to_original:
-            preds = preds + 1  # back to original labels 1..num_classes
+
+        counts = []
+        for sample_pred in preds:
+            c = torch.bincount(sample_pred.view(-1), minlength=num_classes).float()
+            counts.append(c)
+        counts = torch.stack(counts, dim=0)
+        distributions = counts / counts.sum(dim=1, keepdim=True).clamp_min(1e-8)
+
         preds_np = preds.cpu().numpy().astype("uint8")
+        if map_to_original:
+            preds_np = preds_np + 1  # back to original labels 1..num_classes
 
         batch_files = [dataset.images_files[idx_base + i] for i in range(preds_np.shape[0])]
-        for arr, src_path in zip(preds_np, batch_files):
-            out_path = out_dir / Path(src_path).name
-            tifffile.imwrite(out_path, arr)
-        idx_base += preds_np.shape[0]
+        for sample_idx, (arr, src_path) in enumerate(zip(preds_np, batch_files)):
+            sample_id = Path(src_path).stem
+            dist = distributions[sample_idx].cpu().numpy()
+            rows.append({"sample_id": sample_id, **{class_names[i]: float(dist[i]) for i in range(num_classes)}})
+            if save_masks:
+                out_path = masks_dir / Path(src_path).name
+                tifffile.imwrite(out_path, arr)
 
-        print(f"[{idx_base}/{len(dataset)}] saved batch {batch_idx + 1}")
+        idx_base += preds_np.shape[0]
+        print(f"[{idx_base}/{len(dataset)}] processed batch {batch_idx + 1}")
+
+    df = pd.DataFrame(rows)
+    df.to_csv(csv_path, index=False)
+    print(f"[OK] wrote predictions CSV to {csv_path}")
 
 
 def main():

@@ -8,15 +8,7 @@ data:
   batch_size: 8
   num_workers: 2
 
-augmentation:
-# Appliquer la même noramalisation que celle de l'entrainement 
-  val:
-    normalize:
-      mean: [0, 0, 0, 0]
-      std: [1, 1, 1, 1]
-
 model:
-# même model que celui de l'entrainement à changer si besoin. 
   name: unet
   in_channels: 4
   num_classes: 9
@@ -25,5 +17,15 @@ model:
   upconv_filters: 128
 
 output:
-  dir: runs/inference_preds
+  csv_path: runs/inference_preds/predictions.csv
   map_to_original_labels: true  # add +1 to recover labels 1..9 as in dataset masks
+  save_masks: false             # set true to also save predicted masks
+  masks_dir: runs/inference_preds/masks
+  class_names: [class_1, class_2, class_3, class_4, class_5, class_6, class_7, class_8, class_9]
+
+# Optional: uncomment if you used non-default normalization during training
+# augmentation:
+#   val:
+#     normalize:
+#       mean: [0, 0, 0, 0]
+#       std: [1, 1, 1, 1]
