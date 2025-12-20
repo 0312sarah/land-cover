@@ -72,8 +72,14 @@ def run_inference(cfg: dict):
     map_to_original = bool(output_cfg.get("map_to_original_labels", True))
     num_classes = cfg["model"].get("num_classes", 9)
     class_names = output_cfg.get("class_names") or [f"class_{i+1}" for i in range(num_classes)]
-    if len(class_names) != num_classes:
-        raise ValueError(f"class_names length ({len(class_names)}) must match num_classes ({num_classes})")
+    class_offset = int(output_cfg.get("class_offset", 0))
+    if class_offset < 0:
+        raise ValueError("class_offset must be >= 0")
+    if class_offset + num_classes > len(class_names):
+        raise ValueError(
+            f"class_offset + num_classes exceeds class_names length "
+            f"({class_offset}+{num_classes}>{len(class_names)})"
+        )
 
     sample_ids = []
     dists = []
@@ -98,8 +104,12 @@ def run_inference(cfg: dict):
         for sample_idx, (arr, src_path) in enumerate(zip(preds_np, batch_files)):
             sample_id = int(Path(src_path).stem)
             dist = distributions[sample_idx].cpu().numpy()
+            # place predicted distribution into output vector with optional offset (for e.g. leading no_data)
+            dist_out = [0.0] * len(class_names)
+            for i in range(num_classes):
+                dist_out[i + class_offset] = float(dist[i])
             sample_ids.append(sample_id)
-            dists.append(dist)
+            dists.append(dist_out)
             if save_masks:
                 out_path = masks_dir / Path(src_path).name
                 tifffile.imwrite(out_path, arr)
