@@ -72,8 +72,11 @@ def run_inference(cfg: dict):
     map_to_original = bool(output_cfg.get("map_to_original_labels", True))
     num_classes = cfg["model"].get("num_classes", 9)
     class_names = output_cfg.get("class_names") or [f"class_{i+1}" for i in range(num_classes)]
+    if len(class_names) != num_classes:
+        raise ValueError(f"class_names length ({len(class_names)}) must match num_classes ({num_classes})")
 
-    rows = []
+    sample_ids = []
+    dists = []
     idx_base = 0
     for batch_idx, images in enumerate(loader):
         images = images.to(device, non_blocking=True)
@@ -93,9 +96,10 @@ def run_inference(cfg: dict):
 
         batch_files = [dataset.images_files[idx_base + i] for i in range(preds_np.shape[0])]
         for sample_idx, (arr, src_path) in enumerate(zip(preds_np, batch_files)):
-            sample_id = Path(src_path).stem
+            sample_id = int(Path(src_path).stem)
             dist = distributions[sample_idx].cpu().numpy()
-            rows.append({"sample_id": sample_id, **{class_names[i]: float(dist[i]) for i in range(num_classes)}})
+            sample_ids.append(sample_id)
+            dists.append(dist)
             if save_masks:
                 out_path = masks_dir / Path(src_path).name
                 tifffile.imwrite(out_path, arr)
@@ -103,8 +107,9 @@ def run_inference(cfg: dict):
         idx_base += preds_np.shape[0]
         print(f"[{idx_base}/{len(dataset)}] processed batch {batch_idx + 1}")
 
-    df = pd.DataFrame(rows)
-    df.to_csv(csv_path, index=False)
+    df = pd.DataFrame(dists, index=sample_ids, columns=class_names)
+    df.index.name = "sample_id"
+    df.to_csv(csv_path, index=True)
     print(f"[OK] wrote predictions CSV to {csv_path}")
 
 
