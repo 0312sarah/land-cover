@@ -97,35 +97,6 @@ class RandomCrop:
         return image, mask
 
 
-class RandomBrightnessContrast:
-    """Simple brightness/contrast jitter."""
-
-    def __init__(self, brightness: float = 0.0, contrast: float = 0.0):
-        self.brightness = max(0.0, float(brightness))
-        self.contrast = max(0.0, float(contrast))
-
-    def __call__(self, image: Tensor, mask: Optional[Tensor] = None) -> ImageMask:
-        if self.brightness > 0:
-            b_factor = 1.0 + random.uniform(-self.brightness, self.brightness)
-            image = image * b_factor
-        if self.contrast > 0:
-            c_factor = 1.0 + random.uniform(-self.contrast, self.contrast)
-            mean = image.mean(dim=(1, 2), keepdim=True)
-            image = (image - mean) * c_factor + mean
-        return image, mask
-
-
-class RandomGamma:
-    def __init__(self, gamma: float = 0.0):
-        self.gamma = max(0.0, float(gamma))
-
-    def __call__(self, image: Tensor, mask: Optional[Tensor] = None) -> ImageMask:
-        if self.gamma > 0:
-            g = random.uniform(1.0 - self.gamma, 1.0 + self.gamma)
-            image = torch.clamp(image, min=0).pow(g)
-        return image, mask
-
-
 def build_transforms(aug_cfg: Optional[dict], split: str) -> Optional[Callable[[Tensor, Optional[Tensor]], ImageMask]]:
     """
     Build transforms for the given split based on config.
@@ -159,15 +130,6 @@ def build_transforms(aug_cfg: Optional[dict], split: str) -> Optional[Callable[[
         ops.append(RandomRotate90())
     if "random_crop" in geom and geom["random_crop"]:
         ops.append(RandomCrop(geom["random_crop"]))
-
-    photo = split_cfg.get("photometric", {}) or {}
-    if photo.get("brightness", 0.0) or photo.get("contrast", 0.0):
-        ops.append(RandomBrightnessContrast(
-            brightness=float(photo.get("brightness", 0.0)),
-            contrast=float(photo.get("contrast", 0.0)),
-        ))
-    if photo.get("gamma", 0.0):
-        ops.append(RandomGamma(gamma=float(photo.get("gamma", 0.0))))
 
     norm = split_cfg.get("normalize")
     if norm and "mean" in norm and "std" in norm:

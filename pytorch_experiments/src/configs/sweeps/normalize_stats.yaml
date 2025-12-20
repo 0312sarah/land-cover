@@ -17,7 +17,6 @@ augmentation:
       mean: [418.1998, 703.3481, 663.2268, 3253.4684]
       std: [369.2298, 429.4875, 597.0413, 1016.2243]
     geometric: {random_hflip: false, random_vflip: false, random_rotate90: false, random_crop:}
-    photometric: {brightness: 0.0, contrast: 0.0, gamma: 0.0}
   val:
     normalize:
       mean: [418.1998, 703.3481, 663.2268, 3253.4684]

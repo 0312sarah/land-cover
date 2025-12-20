@@ -21,9 +21,10 @@ from src.models.build import build_model
 
 
 class Trainer:
-    def __init__(self, cfg: dict, run_dir: Path):
+    def __init__(self, cfg: dict, run_dir: Path, config_name: str | None = None):
         self.cfg = cfg
         self.run_dir = Path(run_dir)
+        self.config_name = config_name
 
         # ----- device (CUDA if available, else CPU)
         cudnn.benchmark = True  # choose optimal kernels for fixed input sizes
@@ -125,6 +126,8 @@ class Trainer:
             return
         import yaml  # local import to avoid polluting module scope
         with open(cfg_txt_path, "w", encoding="utf-8") as f:
+            if self.config_name:
+                f.write(f"{self.config_name}\n")
             yaml.safe_dump(self.cfg, f, sort_keys=False)
 
     def _save_checkpoint(self, epoch: int, tag: str):

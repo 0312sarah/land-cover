@@ -27,12 +27,13 @@ def main():
             cfg = yaml.safe_load(f)
 
         seed_everything(cfg.get("seed", 42))
+        config_name = Path(cfg_path).stem
 
         base_runs_dir = Path(__file__).resolve().parents[1] / cfg["output"]["runs_dir"]
         run_dir = create_run_dir(base_dir=base_runs_dir, cfg=cfg)
 
         print(f"[RUN] Starting training for config: {cfg_path}")
-        Trainer(cfg=cfg, run_dir=run_dir).fit()
+        Trainer(cfg=cfg, run_dir=run_dir, config_name=config_name).fit()
 
 
 if __name__ == "__main__":

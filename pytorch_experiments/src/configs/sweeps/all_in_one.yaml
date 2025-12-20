@@ -21,10 +21,6 @@ augmentation:
       random_vflip: true
       random_rotate90: true
       random_crop:
-    photometric:
-      brightness: 0.1
-      contrast: 0.1
-      gamma: 0.1
   val:
     normalize:
       mean: [418.1998, 703.3481, 663.2268, 3253.4684]

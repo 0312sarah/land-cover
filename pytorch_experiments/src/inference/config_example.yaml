@@ -1,0 +1,29 @@
+device: auto  # "auto" uses CUDA if available, else CPU
+
+checkpoint: runs/2025-12-19_181407/checkpoints/best.pt
+
+data:
+  root: dataset
+  split: test
+  batch_size: 8
+  num_workers: 2
+
+augmentation:
+# Appliquer la même noramalisation que celle de l'entrainement 
+  val:
+    normalize:
+      mean: [0, 0, 0, 0]
+      std: [1, 1, 1, 1]
+
+model:
+# même model que celui de l'entrainement à changer si besoin. 
+  name: unet
+  in_channels: 4
+  num_classes: 9
+  num_layers: 4
+  base_channels: 96
+  upconv_filters: 128
+
+output:
+  dir: runs/inference_preds
+  map_to_original_labels: true  # add +1 to recover labels 1..9 as in dataset masks
