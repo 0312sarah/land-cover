@@ -1,0 +1,74 @@
+seed: 42
+
+data:
+  root: dataset
+  num_workers: 8
+  batch_size: 64
+  val_ratio: 0.1
+  val_seed: 42
+  sampling:
+    strategy: none
+    class_weights: [1, 1, 1, 1, 1, 1, 1, 1, 1]
+    min_weight: 1.0
+
+augmentation:
+  train:
+    normalize:
+      mean: [418.1998, 703.3481, 663.2268, 3253.4684]
+      std: [369.2298, 429.4875, 597.0413, 1016.2243]
+    geometric:
+      random_hflip: false
+      random_vflip: false
+      random_rotate90: false
+      random_crop:
+  val:
+    normalize:
+      mean: [418.1998, 703.3481, 663.2268, 3253.4684]
+      std: [369.2298, 429.4875, 597.0413, 1016.2243]
+
+model:
+  name: unet
+  in_channels: 4
+  num_classes: 9
+  num_layers: 4
+  base_channels: 96
+  upconv_filters: 128
+
+optim:
+  lr: 1e-3
+  weight_decay: 1e-4
+
+loss:
+  name: dice
+  smooth: 1.0e-06
+  ignore_index:
+
+scheduler:
+  name: none
+  step_size: 10
+  gamma: 0.5
+  t_max: 50
+  eta_min: 0.0
+  factor: 0.5
+  patience: 5
+  min_lr: 0.0
+
+train:
+  epochs: 25
+  amp: true
+  log_every: 10
+  val_each_log: true
+  early_stop:
+    enabled: true
+    patience: 5
+    min_delta: 0.0
+    mode: min
+    start_epoch: 1
+
+checkpoint:
+  save_best: true
+  save_last: true
+  save_every: 0
+
+output:
+  runs_dir: runs
