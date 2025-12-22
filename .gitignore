@@ -9,7 +9,7 @@ pytorch_experiments/dataset/
 # =====================
 pytorch_experiments/runs/
 experiments/
-
+pytorch_experiments/results/
 
 # ===============================
 # TensorFlow baseline outputs
