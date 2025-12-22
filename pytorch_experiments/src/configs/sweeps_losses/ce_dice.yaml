@@ -3,7 +3,7 @@ seed: 42
 data:
   root: dataset
   num_workers: 8
-  batch_size: 64
+  batch_size: 32
   val_ratio: 0.1
   val_seed: 42
   sampling:
