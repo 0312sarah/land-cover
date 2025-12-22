@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 from src.data.loader import build_dataloader, build_train_val_loaders
 from src.data.transforms import build_transforms
 from src.engine.early_stopping import EarlyStopping
-from src.engine.losses import build_loss
+from src.losses import build_loss
 from src.engine.metrics import confusion_to_metrics, save_confusion, update_confusion
 from src.engine.schedulers import build_scheduler
 from src.models.build import build_model
@@ -105,7 +105,11 @@ class Trainer:
         self.writer = SummaryWriter(log_dir=str(self.tb_dir))
 
         self.csv_path = self.run_dir / "logs.csv"
-        self.metrics_path = self.run_dir / "metrics.json"
+        self.metrics_dir = self.run_dir / "metrics"
+        self.metrics_dir.mkdir(parents=True, exist_ok=True)
+        self.metrics_path = self.metrics_dir / "summary.json"
+        self.metrics_per_class_path = self.metrics_dir / "per_class.json"
+        self.metrics_confusion_path = self.metrics_dir / "confusion_best.json"
         self._init_csv()
         self._dump_config_txt()
 
@@ -154,6 +158,17 @@ class Trainer:
         }
         with open(self.metrics_path, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
+
+    def _save_metrics_per_class(self, epoch: int, metrics: dict):
+        """Persist per-class metrics for best checkpoint (val mode only)."""
+        payload = {
+            "epoch": epoch,
+            "monitor": self.monitor,
+            "mean": metrics.get("mean"),
+            "per_class": metrics.get("per_class"),
+        }
+        with open(self.metrics_per_class_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
 
     @torch.no_grad()
     def _run_validation(self) -> tuple[float, dict]:
@@ -283,8 +298,9 @@ class Trainer:
                     if val_loss is not None and "confusion" in val_metrics:
                         save_confusion(
                             np.array(val_metrics["confusion"], dtype=int),
-                            self.run_dir / "val_confusion_best.json",
+                            self.metrics_confusion_path,
                         )
+                        self._save_metrics_per_class(epoch, val_metrics)
 
             if self.save_every > 0 and (epoch % self.save_every == 0):
                 self._save_checkpoint(epoch, tag=f"epoch_{epoch:03d}")

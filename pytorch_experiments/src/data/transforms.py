@@ -109,10 +109,6 @@ def build_transforms(aug_cfg: Optional[dict], split: str) -> Optional[Callable[[
           random_vflip: true/false
           random_rotate90: true/false
           random_crop: [H, W]  # optional
-        photometric:
-          brightness: 0.0
-          contrast: 0.0
-          gamma: 0.0
       val:
         normalize: {mean: [...], std: [...]}
     """
