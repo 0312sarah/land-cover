@@ -21,9 +21,6 @@ def build_loss(loss_cfg: Optional[dict], num_classes: Optional[int] = None, devi
     """
     Supported names:
       - cross_entropy
-      - dice
-      - ce_dice
-      - global_kl
       - ce_global_kl
       - ce_dice_global_kl
     """
@@ -33,7 +30,8 @@ def build_loss(loss_cfg: Optional[dict], num_classes: Optional[int] = None, devi
 
     weight = _ensure_weight_tensor(loss_cfg.get("weight"), num_classes, device)
     ignore_index = loss_cfg.get("ignore_index")
-    exclude_classes = loss_cfg.get("exclude_classes") or []
+    exclude_classes_cfg = loss_cfg.get("exclude_classes") or []
+    exclude_classes = sorted({0, 1, *exclude_classes_cfg})
     dice_weight = float(loss_cfg.get("dice_weight", 1.0))
     kl_weight = float(loss_cfg.get("kl_weight", 1.0))
     smooth = float(loss_cfg.get("smooth", 1e-6))
@@ -42,9 +40,6 @@ def build_loss(loss_cfg: Optional[dict], num_classes: Optional[int] = None, devi
     def ce_loss():
         ce = CrossEntropyLossWrapper(weight=weight, ignore_index=ignore_index)
         return ce.to(device)
-
-    def dice_loss():
-        return DiceLoss(smooth=smooth, ignore_index=ignore_index).to(device)
 
     def kl_loss():
         if num_classes is None:
@@ -58,15 +53,6 @@ def build_loss(loss_cfg: Optional[dict], num_classes: Optional[int] = None, devi
 
     if name == "cross_entropy":
         return ce_loss()
-    if name == "dice":
-        return dice_loss()
-    if name == "ce_dice":
-        return WeightedSumLoss(
-            losses=[ce_loss(), dice_loss()],
-            weights=[1.0, dice_weight],
-        )
-    if name == "global_kl":
-        return kl_loss()
     if name == "ce_global_kl":
         return WeightedSumLoss(
             losses=[ce_loss(), kl_loss()],
@@ -74,7 +60,7 @@ def build_loss(loss_cfg: Optional[dict], num_classes: Optional[int] = None, devi
         )
     if name == "ce_dice_global_kl":
         return WeightedSumLoss(
-            losses=[ce_loss(), dice_loss(), kl_loss()],
+            losses=[ce_loss(), DiceLoss(smooth=smooth, ignore_index=ignore_index).to(device), kl_loss()],
             weights=[1.0, dice_weight, kl_weight],
         )
 

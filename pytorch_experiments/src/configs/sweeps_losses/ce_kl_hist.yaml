@@ -39,9 +39,12 @@ optim:
   weight_decay: 1e-4
 
 loss:
-  name: dice
-  smooth: 1.0e-06
+  name: ce_global_kl
+  weight:
   ignore_index:
+  exclude_classes: []
+  eps: 1.0e-06
+  kl_weight: 1.0
 
 scheduler:
   name: none

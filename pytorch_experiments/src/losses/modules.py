@@ -60,7 +60,8 @@ class DiceLoss(nn.Module):
 
 class GlobalKLLoss(nn.Module):
     """
-    KL( GT_hist || mean_softmax ) computed per-sample, with optional class exclusion.
+    KL(GT_hist || pred_hist) computed per-sample, excluding specified classes (default [0,1]).
+    Aligns with leaderboard metric: compare class distributions (histogram) per image.
     """
 
     def __init__(
@@ -73,7 +74,10 @@ class GlobalKLLoss(nn.Module):
         super().__init__()
         self.num_classes = int(num_classes)
         self.eps = float(eps)
-        self.exclude_classes: List[int] = sorted(int(c) for c in exclude_classes) if exclude_classes else []
+        base_excl = {0, 1}
+        if exclude_classes:
+            base_excl.update(int(c) for c in exclude_classes)
+        self.exclude_classes: List[int] = sorted(base_excl)
         self.ignore_index = ignore_index
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
@@ -96,15 +100,20 @@ class GlobalKLLoss(nn.Module):
                 torch.clamp(target_valid, min=0).view(-1),
                 minlength=self.num_classes,
             ).float()
-            pred_mean = probs[b].reshape(C, -1).mean(dim=1)
+            pred_sum = probs[b].reshape(C, -1).sum(dim=1)
 
             if self.exclude_classes:
                 excl = torch.tensor(self.exclude_classes, device=device, dtype=torch.long)
                 tgt_hist[excl] = 0.0
-                pred_mean[excl] = 0.0
+                pred_sum[excl] = 0.0
 
-            tgt_dist = tgt_hist / (tgt_hist.sum() + self.eps)
-            pred_dist = pred_mean / (pred_mean.sum() + self.eps)
+            tgt_total = tgt_hist.sum()
+            pred_total = pred_sum.sum()
+            if tgt_total <= 0 or pred_total <= 0:
+                continue
+
+            tgt_dist = tgt_hist / (tgt_total + self.eps)
+            pred_dist = pred_sum / (pred_total + self.eps)
 
             kl = (tgt_dist * (torch.log(tgt_dist + self.eps) - torch.log(pred_dist + self.eps))).sum()
             kl_terms.append(kl)
