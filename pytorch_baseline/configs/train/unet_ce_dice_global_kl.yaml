@@ -1,7 +1,7 @@
 seed: 42
 
 data:
-  root: /dataset
+  root: /dataset/dataset
   batch_size: 32
   num_workers: 4
   val_samples_csv: null

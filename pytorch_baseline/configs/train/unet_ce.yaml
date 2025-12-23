@@ -1,15 +1,15 @@
 seed: 42
 
 data:
-  root: ../data/dataset
+  root: /dataset
   batch_size: 32
   num_workers: 4
   val_samples_csv: null
 
 augmentations:
-  hflip: true
-  vflip: true
-  rotate: true
+  hflip: false
+  vflip: false
+  rotate: false
 
 model:
   name: unet
