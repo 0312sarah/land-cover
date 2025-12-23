@@ -69,10 +69,22 @@ def run_inference(cfg: dict):
         masks_dir.mkdir(parents=True, exist_ok=True)
     csv_path = Path(output_cfg.get("csv_path", "runs/inference_preds/predictions.csv"))
     csv_path.parent.mkdir(parents=True, exist_ok=True)
-    map_to_original = bool(output_cfg.get("map_to_original_labels", True))
+    map_to_original = bool(output_cfg.get("map_to_original_labels", False))
     num_classes = cfg["model"].get("num_classes", 9)
-    class_names = output_cfg.get("class_names") or [f"class_{i+1}" for i in range(num_classes)]
-    class_offset = int(output_cfg.get("class_offset", 0))
+    default_class_names = [
+        "no_data",
+        "clouds",
+        "artificial",
+        "cultivated",
+        "broadleaf",
+        "coniferous",
+        "herbaceous",
+        "natural",
+        "snow",
+        "water",
+    ]
+    class_names = output_cfg.get("class_names") or default_class_names
+    class_offset = int(output_cfg.get("class_offset", 1))
     if class_offset < 0:
         raise ValueError("class_offset must be >= 0")
     if class_offset + num_classes > len(class_names):
@@ -97,8 +109,6 @@ def run_inference(cfg: dict):
         distributions = counts / counts.sum(dim=1, keepdim=True).clamp_min(1e-8)
 
         preds_np = preds.cpu().numpy().astype("uint8")
-        if map_to_original:
-            preds_np = preds_np + 1  # back to original labels 1..num_classes
 
         batch_files = [dataset.images_files[idx_base + i] for i in range(preds_np.shape[0])]
         for sample_idx, (arr, src_path) in enumerate(zip(preds_np, batch_files)):

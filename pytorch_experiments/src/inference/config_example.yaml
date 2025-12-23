@@ -1,6 +1,6 @@
 device: auto  # "auto" uses CUDA if available, else CPU
 
-checkpoint: runs/2025-12-19_181407/checkpoints/best.pt
+checkpoint: runs/2025-12-22_075135/checkpoints/best.pt
 
 data:
   root: dataset
@@ -11,24 +11,16 @@ data:
 model:
   name: unet
   in_channels: 4
-  num_classes: 9            # model outputs 9 classes (labels 1..9 mapped to 0..8)
+  num_classes: 9            # model outputs classes 0..8
   num_layers: 4
   base_channels: 96
   upconv_filters: 128
 
 output:
   csv_path: runs/inference_preds/predictions.csv
-  map_to_original_labels: true  # add +1 to recover labels 1..9 as in dataset masks (only used if save_masks=true)
-  save_masks: false             # set true to also save predicted masks
+  map_to_original_labels: false
+  save_masks: false
   masks_dir: runs/inference_preds/masks
-  # Remplacer par les noms de classes attendus pour la soumission
-  # Exemple (format baseline TensorFlow avec 10 classes, offset=1 pour ajouter 'no_data' en première colonne):
+  # Columns aligned to TensorFlow baseline (10 classes, no_data first)
   class_names: [no_data, clouds, artificial, cultivated, broadleaf, coniferous, herbaceous, natural, snow, water]
-  class_offset: 1  # décale les 9 sorties du modèle pour laisser la 1ère colonne (no_data) à zéro
-
-# Optional: uncomment if you used non-default normalization during training
-# augmentation:
-#   val:
-#     normalize:
-#       mean: [0, 0, 0, 0]
-#       std: [1, 1, 1, 1]
+  class_offset: 1  # place model outputs (0..8) starting at column "clouds"
