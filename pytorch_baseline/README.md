@@ -30,4 +30,4 @@ Run from inside the `pytorch_baseline/` folder (so the `baseline` package is on 
 
 ## Outputs
 - Run directory under `training.xp_rootdir` (timestamped unless `xp_name` set) containing checkpoints (`checkpoints/epoch{N}.pt`), `log.txt`, `config.yaml`, and `val_samples.csv`.
-- Inference defaults to `epoch{checkpoint_epoch}_{set}_predicted.csv` inside the run directory unless `inference.output_csv` is provided.
+- Inference: set `inference.checkpoint_epoch` to a number or `inference.checkpoint: best` to load `checkpoints/best.pt`; outputs default to `epoch{checkpoint_epoch}_{set}_predicted.csv` (or `best_{set}_predicted.csv` if using best) inside the run directory unless `inference.output_csv` is provided.

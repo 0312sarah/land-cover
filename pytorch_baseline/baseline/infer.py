@@ -117,7 +117,17 @@ def main():
         upconv_filters=getattr(cfg.model, "upconv_filters", 96),
     ).to(device)
 
-    ckpt_path = xp_dir / "checkpoints" / f"epoch{cfg.inference.checkpoint_epoch}.pt"
+    checkpoint_epoch = getattr(cfg.inference, "checkpoint_epoch", None)
+    checkpoint_name = getattr(cfg.inference, "checkpoint", None)
+    if checkpoint_name is not None and str(checkpoint_name).lower() == "best":
+        ckpt_path = xp_dir / "checkpoints" / "best.pt"
+        ckpt_label = "best"
+    elif checkpoint_epoch is not None:
+        ckpt_path = xp_dir / "checkpoints" / f"epoch{checkpoint_epoch}.pt"
+        ckpt_label = f"epoch{checkpoint_epoch}"
+    else:
+        raise ValueError("Provide inference.checkpoint_epoch or inference.checkpoint ('best').")
+
     assert ckpt_path.is_file(), f"Checkpoint not found: {ckpt_path}"
     state = torch.load(ckpt_path, map_location=device)
     model.load_state_dict(state["model_state"])
@@ -139,7 +149,7 @@ def main():
 
     out_csv = getattr(cfg.inference, "output_csv", None)
     if out_csv is None:
-        out_csv = xp_dir / f"epoch{cfg.inference.checkpoint_epoch}_{cfg.inference.set}_predicted.csv"
+        out_csv = xp_dir / f"{ckpt_label}_{cfg.inference.set}_predicted.csv"
     out_csv = Path(out_csv).expanduser().resolve()
     print(f"Saving prediction CSV to {out_csv}")
     out_csv.parent.mkdir(parents=True, exist_ok=True)
