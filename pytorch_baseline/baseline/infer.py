@@ -133,17 +133,11 @@ def main():
     model.load_state_dict(state["model_state"])
 
     dists, sample_ids = run_inference(model, loader, device=device, eps=getattr(cfg.inference, "eps", 1e-8))
-    columns = [
-        "artificial",
-        "cultivated",
-        "broadleaf",
-        "coniferous",
-        "herbaceous",
-        "natural_material",
-        "snow",
-        "water",
-    ]
-    df = pd.DataFrame(dists.numpy(), index=pd.Index(sample_ids, name="sample_id"), columns=columns)
+    # Expand back to 10-class format with leading zeros for no_data/clouds to match TF baseline column order.
+    full_dists = torch.zeros((dists.shape[0], LandCoverData.N_CLASSES), dtype=dists.dtype)
+    full_dists[:, 2:] = dists
+    columns = LandCoverData.CLASSES
+    df = pd.DataFrame(full_dists.numpy(), index=pd.Index(sample_ids, name="sample_id"), columns=columns)
     df.insert(0, "sample_id", df.index)
     sanity_checks(df.reset_index(drop=True), columns)
 

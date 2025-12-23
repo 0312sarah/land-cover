@@ -17,9 +17,9 @@ Run from inside the `pytorch_baseline/` folder (so the `baseline` package is on 
 - Validation metric `val_kl`: per-image distributions (drop classes 0/1, renormalize, eps=1e-8) and mean KL.
 - Best model metrics: the best checkpoint by lowest `val_kl` is saved to `checkpoints/best.pt`, and per-class precision/recall on the validation set are written to `metrics/metrics.txt`.
 
-## Submission CSV (challenge compliant)
-- Uses soft probabilities: softmax logits → mean over H,W → drop classes 0/1 → add eps=1e-8 → renormalize.
-- Columns: `sample_id,artificial,cultivated,broadleaf,coniferous,herbaceous,natural_material,snow,water`.
+## Submission CSV
+- Uses soft probabilities: softmax logits → mean over H,W → drop classes 0/1 → add eps=1e-8 → renormalize (8 classes), then pads leading zeros for `no_data` and `clouds` to match the TF baseline column order.
+- Columns: `sample_id,no_data,clouds,artificial,cultivated,broadleaf,coniferous,herbaceous,natural,snow,water`.
 - Sanity checks ensure correct columns, non-negative finite values, row sums within 1e-5 of 1, and print a preview/min/max.
 
 ## Config highlights
