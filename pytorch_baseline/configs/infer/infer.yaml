@@ -13,8 +13,9 @@ inference:
   batch_size: 32
   num_workers: 4
   xp_rootdir: experiments/
-  xp_name: 23-12-2025_14-46-22/  # or specific run dir name
-  checkpoint_epoch: best
+  xp_name: 23-12-2025_14-46-22  # or specific run dir name
+  checkpoint: best        # load checkpoints/best.pt
+  # checkpoint_epoch: 1   # alternatively, comment checkpoint above and set a number to load epochN
   set: test  # train | val | test
   output_csv: null  # optional override path
   eps: 1.0e-8
