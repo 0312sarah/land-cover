@@ -117,6 +117,7 @@ def predict_distributions_with_tta(
     for name, transform in tta:
         dists = []
         ids = []
+        gt_batches = []
         for batch in tqdm(loader, total=len(loader), desc=f"TTA:{name}"):
             if len(batch) == 3:
                 images, masks, batch_ids = batch
@@ -137,9 +138,12 @@ def predict_distributions_with_tta(
                 gt_dist = one_hot.sum(dim=(2, 3))
                 gt_dist = gt_dist[:, 2:]
                 gt_dist = gt_dist / gt_dist.sum(dim=1, keepdim=True).clamp_min(eps)
-                gt_reference = gt_dist.cpu()
+                gt_batches.append(gt_dist.cpu())
 
         current = torch.cat(dists, dim=0)
+        if gt_reference is None and gt_batches:
+            gt_reference = torch.cat(gt_batches, dim=0)
+
         if sample_ids is None:
             sample_ids = ids
         elif sample_ids != ids:
