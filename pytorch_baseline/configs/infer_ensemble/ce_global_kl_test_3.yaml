@@ -15,7 +15,7 @@ inference:
   xp_rootdir: configs/infer_ensemble
   xp_name: ce_global_kl005
   checkpoints:
-    - checkpoints/epoch26.pt
+    - checkpoints/best.pt
     - checkpoints/epoch27.pt
     - checkpoints/epoch30.pt
   set: test
