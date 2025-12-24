@@ -1,0 +1,24 @@
+seed: 42
+
+data:
+  root: dataset/
+
+model:
+  name: unet
+  num_layers: 4
+  base_filters: 64
+  upconv_filters: 96
+
+inference:
+  batch_size: 32
+  num_workers: 4
+  xp_rootdir: experiments/
+  xp_name: ce_gloabal_kl_kl005
+  checkpoints:
+    - checkpoints/epoch26.pt
+    - checkpoints/epoch27.pt
+    - checkpoints/epoch30.pt
+  set: val
+  tta: [none]
+  output_csv: configs/infer_ensemble/ce_global_kl_val_3/ensemble_ce_global_kl_val_3.csv
+  eps: 1.0e-8
