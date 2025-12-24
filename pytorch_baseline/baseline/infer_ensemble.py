@@ -187,6 +187,7 @@ def main():
     checkpoints = resolve_checkpoints(cfg.inference.checkpoints, xp_dir)
     tta = build_tta_transforms(getattr(cfg.inference, "tta", ["none"]))
     eps = getattr(cfg.inference, "eps", 1e-8)
+    compute_kl = getattr(cfg.inference, "compute_kl", inference_set != "test")
 
     ensemble_dists = []
     sample_ids = None
