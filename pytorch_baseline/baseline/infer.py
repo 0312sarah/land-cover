@@ -44,7 +44,9 @@ def build_file_lists(cfg, xp_dir: Path, dataset_folder: Path) -> Tuple[List[Path
     if cfg.inference.set == "test":
         files = sorted(dataset_folder.glob("test/images/*.tif"))
     else:
-        val_samples = pd.read_csv(xp_dir / "val_samples.csv", squeeze=True)
+        # squeeze kwarg removed in recent pandas; select first column explicitly.
+        val_samples_df = pd.read_csv(xp_dir / "val_samples.csv")
+        val_samples = val_samples_df.iloc[:, 0].tolist()
         val_files = [dataset_folder / f"train/images/{int(i)}.tif" for i in val_samples]
         if cfg.inference.set == "val":
             files = val_files
