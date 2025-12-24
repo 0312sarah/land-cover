@@ -12,8 +12,8 @@ model:
 inference:
   batch_size: 32
   num_workers: 4
-  xp_rootdir: experiments/
-  xp_name: ce_gloabl_kl_kl005
+  xp_rootdir: configs/infer_ensemble
+  xp_name: ce_gloabl_kl005
   checkpoints:
     - checkpoints/epoch26.pt
     - checkpoints/epoch27.pt
