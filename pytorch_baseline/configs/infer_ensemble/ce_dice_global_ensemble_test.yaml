@@ -19,6 +19,8 @@ inference:
     - checkpoints/epoch29.pt
     - checkpoints/epoch28.pt
     - checkpoints/epoch27.pt
+    - checkpoints/epoch17.pt
+    - checkpoints/epoch24.pt
   set: test  # val lance une validation calcule une loss | test
   tta: [none] # On peut les enlever pour faire un ensemble simple
   output_csv: configs/infer_ensemble/ce_dice_global_ensemble_val/ensemble_dice_val.csv  
