@@ -20,5 +20,5 @@ inference:
     - checkpoints/epoch27.pt
   set: val  # val lance une validation calcule une loss | test
   tta: [none, hflip, vflip, rot90] # On peut les enlever pour faire un ensemble simple
-  output_csv: pytorch_baseline/configs/infer_ensemble/result/ensemble_TTA_dice_val.csv  
+  output_csv: pytorch_baseline/configs/infer_ensemble/ce_dice_global_ensemble_TTA_val/ensemble_TTA_dice_val.csv  
   eps: 1.0e-8

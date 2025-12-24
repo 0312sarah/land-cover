@@ -107,12 +107,12 @@ def predict_distributions_with_tta(
     device: torch.device,
     tta: List[Tuple[str, Callable[[torch.Tensor], torch.Tensor]]],
     eps: float,
-) -> Tuple[torch.Tensor, List[int], Optional[torch.Tensor]]:
+) -> Tuple[torch.Tensor, List[int], Optional[torch.Tensor], List[Tuple[str, float]]]:
     model.eval()
     tta_outputs = []
     sample_ids = None
-    gt_dists: Optional[List[torch.Tensor]] = []
-    collect_gt = True
+    gt_reference: Optional[torch.Tensor] = None
+    tta_kls: List[Tuple[str, float]] = []
 
     for name, transform in tta:
         dists = []
@@ -130,14 +130,14 @@ def predict_distributions_with_tta(
             dists.append(dist.cpu())
             ids.extend(int(s) for s in batch_ids)
 
-            if masks is not None and collect_gt:
+            if masks is not None and gt_reference is None:
                 # Ground-truth distribution per sample (drop classes 0/1 + renorm).
                 num_classes = LandCoverData.N_CLASSES
                 one_hot = torch.nn.functional.one_hot(masks, num_classes=num_classes).permute(0, 3, 1, 2).float()
                 gt_dist = one_hot.sum(dim=(2, 3))
                 gt_dist = gt_dist[:, 2:]
                 gt_dist = gt_dist / gt_dist.sum(dim=1, keepdim=True).clamp_min(eps)
-                gt_dists.append(gt_dist.cpu())
+                gt_reference = gt_dist.cpu()
 
         current = torch.cat(dists, dim=0)
         if sample_ids is None:
@@ -145,11 +145,13 @@ def predict_distributions_with_tta(
         elif sample_ids != ids:
             raise RuntimeError("Sample IDs differ between TTA passes; unexpected dataloader ordering change.")
         tta_outputs.append(current)
-        collect_gt = False  # Only need GT once (ordering identical across TTA passes).
+
+        if gt_reference is not None:
+            kl_val = kl_divergence(gt_reference, current, eps=eps).mean().item()
+            tta_kls.append((name, kl_val))
 
     stacked = torch.stack(tta_outputs, dim=0)
-    out_gt = torch.cat(gt_dists, dim=0) if gt_dists else None
-    return stacked.mean(dim=0), sample_ids, out_gt
+    return stacked.mean(dim=0), sample_ids, gt_reference, tta_kls
 
 
 def main():
@@ -185,6 +187,7 @@ def main():
     ensemble_dists = []
     sample_ids = None
     gt_reference = None
+    log_lines: List[str] = []
 
     for ckpt_path in checkpoints:
         print(f"Running model from {ckpt_path}")
@@ -192,7 +195,7 @@ def main():
         state = torch.load(ckpt_path, map_location=device)
         model.load_state_dict(state["model_state"])
 
-        dists, ids, gt = predict_distributions_with_tta(model, loader, device=device, tta=tta, eps=eps)
+        dists, ids, gt, tta_kls = predict_distributions_with_tta(model, loader, device=device, tta=tta, eps=eps)
         if sample_ids is None:
             sample_ids = ids
         elif sample_ids != ids:
@@ -200,6 +203,12 @@ def main():
         if gt is not None and gt_reference is None:
             gt_reference = gt
         ensemble_dists.append(dists)
+
+        if compute_kl and gt is not None:
+            model_kl = kl_divergence(gt, dists, eps=eps).mean().item()
+            log_lines.append(f"model={ckpt_path.name}\tKL={model_kl:.6f}")
+            for tta_name, tta_kl in tta_kls:
+                log_lines.append(f"model={ckpt_path.name}\ttta={tta_name}\tKL={tta_kl:.6f}")
 
     assert len(ensemble_dists) > 0, "No predictions were collected."
     mean_dist = torch.stack(ensemble_dists, dim=0).mean(dim=0)
@@ -218,6 +227,7 @@ def main():
     if compute_kl and gt_reference is not None:
         kl_value = kl_divergence(gt_reference, mean_dist, eps=eps).mean().item()
         print(f"Validation KL (set={inference_set}): {kl_value:.6f}")
+        log_lines.append(f"ensemble\tKL={kl_value:.6f}")
 
     out_csv = getattr(cfg.inference, "output_csv", None)
     if out_csv is None:
@@ -229,8 +239,9 @@ def main():
 
     if kl_value is not None:
         kl_path = out_csv.parent / "val_loss.txt"
-        kl_path.write_text(f"{kl_value:.6f}\n")
-        print(f"Saved validation KL to {kl_path}")
+        kl_content = "\n".join(log_lines + [f"ensemble_mean\tKL={kl_value:.6f}"])
+        kl_path.write_text(kl_content + "\n")
+        print(f"Saved validation KL breakdown to {kl_path}")
 
 
 if __name__ == "__main__":
