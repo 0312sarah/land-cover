@@ -13,12 +13,12 @@ inference:
   batch_size: 32
   num_workers: 4
   xp_rootdir: configs/infer_ensemble
-  xp_name: ce_global_kl005
+  xp_name: best_mod
   checkpoints:
-    - checkpoints/best.pt
-    - checkpoints/epoch27.pt
-    - checkpoints/epoch30.pt
+    - epoch29.pt
+    - epoch28.pt
+    - best.pt
   set: val
   tta: [none]
-  output_csv: configs/infer_ensemble/ce_global_kl_test_3/1_2_val_3.csv
+  output_csv: configs/infer_ensemble/1_2_3/1_2_3_val.csv
   eps: 1.0e-8
