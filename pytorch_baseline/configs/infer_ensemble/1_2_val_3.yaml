@@ -1,0 +1,25 @@
+seed: 42
+
+data:
+  root: dataset/
+
+model:
+  name: unet
+  num_layers: 4
+  base_filters: 64
+  upconv_filters: 96
+
+inference:
+  batch_size: 32
+  num_workers: 4
+  xp_rootdir: configs/infer_ensemble
+  xp_name: best_mod
+  checkpoints:
+    - epoch29.pt
+    - epoch28.pt
+    - best.pt
+  set: val
+  tta: [none]
+  output_csv: configs/infer_ensemble/1_2_3/1_2_3_val.csv
+  eps: 1.0e-8
+  snow_floor: 0.0001

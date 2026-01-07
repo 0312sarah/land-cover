@@ -1,0 +1,27 @@
+seed: 42
+
+data:
+  root: dataset/
+
+model:
+  name: unet
+  num_layers: 4
+  base_filters: 64
+  upconv_filters: 96
+
+inference:
+  batch_size: 32
+  num_workers: 4
+  xp_rootdir: experiments/
+  xp_name: 23-12-2025_18-29-08  # chemin de l'experiment
+  checkpoints:
+    - checkpoints/epoch29.pt
+    - checkpoints/epoch28.pt
+    - checkpoints/epoch27.pt
+    - checkpoints/epoch24.pt
+    - checkpoints/epoch17.pt
+  set: val  # val lance une validation calcule une loss | test
+  tta: [none] # On peut les enlever pour faire un ensemble simple
+  output_csv: configs/infer_ensemble/ce_dice_global_ensemble_val/ensemble_dice_val.csv  
+  eps: 1.0e-8
+  snow_floor: null  # optionnel : mettre un float (ex: 0.01) pour forcer une proba minimale sur la classe snow après drop

@@ -1,0 +1,8 @@
+model=epoch29.pt	KL=0.014444
+model=epoch29.pt	tta=none	KL=0.014444
+model=epoch28.pt	KL=0.013463
+model=epoch28.pt	tta=none	KL=0.013463
+model=best.pt	KL=0.013513
+model=best.pt	tta=none	KL=0.013513
+ensemble	KL=0.011337
+ensemble_mean	KL=0.011337

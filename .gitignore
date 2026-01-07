@@ -1,15 +1,37 @@
+# ===============================
 # Data (trop lourd)
-data/
+# ===============================
 
-# Expériences de training
-experiments/
+pytorch_baseline/dataset/
 
-# Fichiers système
+# =====================
+# Outputs d'entraînement
+# =====================
+
+pytorch_baseline/experiments/
+
+
+
+# ===============================
+# TensorFlow baseline outputs
+# ===============================
+tensorflow_baseline/experiments/
+
+# ===============================
+# Python cache
+# ===============================
 *.pyc
 __pycache__/
+
+# ===============================
+# Jupyter
+# ===============================
 .ipynb_checkpoints/
 
-# Environnement
-*.yml
+# ===============================
+# OS / editor
+# ===============================
+.DS_Store
+Thumbs.db
 
 

@@ -1,0 +1,22 @@
+seed: 42
+
+data:
+  root: dataset/
+
+model:
+  name: unet
+  num_layers: 4
+  base_filters: 64
+  upconv_filters: 96
+
+inference:
+  batch_size: 32
+  num_workers: 4
+  xp_rootdir: experiments/
+  xp_name: 23-12-2025_14-46-22  # or specific run dir name
+  checkpoint: best        # load checkpoints/best.pt
+  # checkpoint_epoch: 1   # alternatively, comment checkpoint above and set a number to load epochN
+  set: test  # train | val | test
+  output_csv: null  # optional override path
+  eps: 1.0e-8
+  snow_floor: null  # set to a float (e.g., 0.01) to enforce a minimum snow probability after dropping classes 0/1
