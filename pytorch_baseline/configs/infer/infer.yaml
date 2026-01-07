@@ -19,3 +19,4 @@ inference:
   set: test  # train | val | test
   output_csv: null  # optional override path
   eps: 1.0e-8
+  snow_floor: null  # set to a float (e.g., 0.01) to enforce a minimum snow probability after dropping classes 0/1

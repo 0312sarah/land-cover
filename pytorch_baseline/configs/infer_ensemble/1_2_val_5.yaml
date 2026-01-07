@@ -24,3 +24,4 @@ inference:
   tta: [none]
   output_csv: configs/infer_ensemble/1_2_5/1_2_5_val.csv
   eps: 1.0e-8
+  snow_floor: 0.02

@@ -24,3 +24,4 @@ inference:
   tta: [none] # On peut les enlever pour faire un ensemble simple
   output_csv: configs/infer_ensemble/ce_dice_global_ensemble_val/ensemble_dice_val.csv  
   eps: 1.0e-8
+  snow_floor: null  # optionnel : mettre un float (ex: 0.01) pour forcer une proba minimale sur la classe snow après drop

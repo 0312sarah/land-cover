@@ -9,10 +9,19 @@ import torch
 import torch.nn.functional as F
 
 
-def _drop_and_normalize(dist: torch.Tensor, exclude_classes: List[int], eps: float) -> torch.Tensor:
+def _drop_and_normalize(
+    dist: torch.Tensor, exclude_classes: List[int], eps: float, snow_floor: Optional[float] = None, snow_class: int = 8
+) -> torch.Tensor:
     keep = [i for i in range(dist.shape[1]) if i not in exclude_classes]
     keep_idx = torch.tensor(keep, device=dist.device, dtype=torch.long)
     dist = dist.index_select(1, keep_idx)
+
+    if snow_floor is not None and snow_floor > 0 and snow_class in keep:
+        snow_floor = float(snow_floor)
+        snow_floor = max(0.0, min(snow_floor, 1.0))
+        snow_idx = keep.index(snow_class)
+        dist[:, snow_idx] = torch.clamp(dist[:, snow_idx], min=snow_floor)
+
     dist = dist / dist.sum(dim=1, keepdim=True).clamp_min(eps)
     return dist
 
@@ -48,7 +57,11 @@ def batch_val_kl(
 
 
 def distributions_from_logits(
-    logits: torch.Tensor, exclude_classes: Optional[List[int]] = None, eps: float = 1e-8
+    logits: torch.Tensor,
+    exclude_classes: Optional[List[int]] = None,
+    eps: float = 1e-8,
+    snow_floor: Optional[float] = None,
+    snow_class: int = 8,
 ) -> torch.Tensor:
     """
     Compute per-sample class distributions from logits for inference.
@@ -60,6 +73,5 @@ def distributions_from_logits(
         exclude_classes = [0, 1]
     prob = torch.softmax(logits, dim=1)
     dist = prob.mean(dim=(2, 3))
-    dist = _drop_and_normalize(dist, exclude_classes, eps)
+    dist = _drop_and_normalize(dist, exclude_classes, eps, snow_floor=snow_floor, snow_class=snow_class)
     return dist
-

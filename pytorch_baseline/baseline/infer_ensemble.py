@@ -107,6 +107,7 @@ def predict_distributions_with_tta(
     device: torch.device,
     tta: List[Tuple[str, Callable[[torch.Tensor], torch.Tensor]]],
     eps: float,
+    snow_floor: Optional[float] = None,
 ) -> Tuple[torch.Tensor, List[int], Optional[torch.Tensor], List[Tuple[str, float]]]:
     model.eval()
     tta_outputs = []
@@ -127,7 +128,7 @@ def predict_distributions_with_tta(
 
             images = transform(images).to(device)
             logits = model(images)
-            dist = distributions_from_logits(logits, exclude_classes=[0, 1], eps=eps)
+            dist = distributions_from_logits(logits, exclude_classes=[0, 1], eps=eps, snow_floor=snow_floor)
             dists.append(dist.cpu())
             ids.extend(int(s) for s in batch_ids)
 
@@ -187,6 +188,7 @@ def main():
     checkpoints = resolve_checkpoints(cfg.inference.checkpoints, xp_dir)
     tta = build_tta_transforms(getattr(cfg.inference, "tta", ["none"]))
     eps = getattr(cfg.inference, "eps", 1e-8)
+    snow_floor = getattr(cfg.inference, "snow_floor", None)
     compute_kl = getattr(cfg.inference, "compute_kl", inference_set != "test")
 
     ensemble_dists = []
@@ -200,7 +202,9 @@ def main():
         state = torch.load(ckpt_path, map_location=device)
         model.load_state_dict(state["model_state"])
 
-        dists, ids, gt, tta_kls = predict_distributions_with_tta(model, loader, device=device, tta=tta, eps=eps)
+        dists, ids, gt, tta_kls = predict_distributions_with_tta(
+            model, loader, device=device, tta=tta, eps=eps, snow_floor=snow_floor
+        )
         if sample_ids is None:
             sample_ids = ids
         elif sample_ids != ids:

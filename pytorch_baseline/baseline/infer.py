@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import random
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -71,7 +71,9 @@ def sanity_checks(df: pd.DataFrame, class_cols: List[str]) -> None:
 
 
 @torch.no_grad()
-def run_inference(model: UNet, loader: DataLoader, device: torch.device, eps: float = 1e-8):
+def run_inference(
+    model: UNet, loader: DataLoader, device: torch.device, eps: float = 1e-8, snow_floor: Optional[float] = None
+):
     model.eval()
     all_dists = []
     all_ids = []
@@ -80,7 +82,7 @@ def run_inference(model: UNet, loader: DataLoader, device: torch.device, eps: fl
         sample_ids = [int(s) for s in sample_ids]
         images = images.to(device)
         logits = model(images)
-        dist = distributions_from_logits(logits, exclude_classes=[0, 1], eps=eps)
+        dist = distributions_from_logits(logits, exclude_classes=[0, 1], eps=eps, snow_floor=snow_floor)
         all_dists.append(dist.cpu())
         all_ids.extend(sample_ids)
     return torch.cat(all_dists, dim=0), all_ids
@@ -134,7 +136,10 @@ def main():
     state = torch.load(ckpt_path, map_location=device)
     model.load_state_dict(state["model_state"])
 
-    dists, sample_ids = run_inference(model, loader, device=device, eps=getattr(cfg.inference, "eps", 1e-8))
+    snow_floor = getattr(cfg.inference, "snow_floor", None)
+    dists, sample_ids = run_inference(
+        model, loader, device=device, eps=getattr(cfg.inference, "eps", 1e-8), snow_floor=snow_floor
+    )
     # Expand back to 10-class format with leading zeros for no_data/clouds to match TF baseline column order.
     full_dists = torch.zeros((dists.shape[0], LandCoverData.N_CLASSES), dtype=dists.dtype)
     full_dists[:, 2:] = dists
