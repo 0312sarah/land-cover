@@ -18,7 +18,7 @@ from tqdm import tqdm
 from baseline.config import load_config
 from baseline.data import LandCoverData, build_dataloader, Augmentations
 from baseline.metrics import distributions_from_logits
-from baseline.model import UNet
+from baseline.model import build_model
 from baseline.utils import get_device, set_seed
 
 
@@ -113,12 +113,16 @@ def main():
         drop_last=False,
     )
 
-    model = UNet(
+    model = build_model(
+        name=getattr(cfg.model, "name", "unet"),
         in_channels=LandCoverData.N_CHANNELS,
         num_classes=LandCoverData.N_CLASSES,
-        num_layers=cfg.model.num_layers,
+        num_layers=getattr(cfg.model, "num_layers", 2),
         base_filters=getattr(cfg.model, "base_filters", 64),
         upconv_filters=getattr(cfg.model, "upconv_filters", 96),
+        features=getattr(cfg.model, "features", None),
+        pretrained=getattr(cfg.model, "pretrained", True),
+        decoder_channels=getattr(cfg.model, "decoder_channels", None),
     ).to(device)
 
     checkpoint_epoch = getattr(cfg.inference, "checkpoint_epoch", None)

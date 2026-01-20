@@ -17,7 +17,7 @@ from baseline.config import load_config
 from baseline.data import LandCoverData, build_dataloader, Augmentations
 from baseline.infer import build_file_lists, resolve_xp_dir, sanity_checks
 from baseline.metrics import distributions_from_logits, kl_divergence
-from baseline.model import UNet
+from baseline.model import build_model as build_model_factory
 from baseline.utils import get_device, set_seed
 
 
@@ -27,13 +27,17 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_model(cfg, device: torch.device) -> UNet:
-    return UNet(
+def build_model(cfg, device: torch.device) -> torch.nn.Module:
+    return build_model_factory(
+        name=getattr(cfg.model, "name", "unet"),
         in_channels=LandCoverData.N_CHANNELS,
         num_classes=LandCoverData.N_CLASSES,
-        num_layers=cfg.model.num_layers,
+        num_layers=getattr(cfg.model, "num_layers", 2),
         base_filters=getattr(cfg.model, "base_filters", 64),
         upconv_filters=getattr(cfg.model, "upconv_filters", 96),
+        features=getattr(cfg.model, "features", None),
+        pretrained=getattr(cfg.model, "pretrained", True),
+        decoder_channels=getattr(cfg.model, "decoder_channels", None),
     ).to(device)
 
 

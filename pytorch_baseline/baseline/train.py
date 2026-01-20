@@ -17,7 +17,7 @@ from baseline.config import load_config
 from baseline.data import LandCoverData, Augmentations, build_dataloader
 from baseline.losses import LossFactory
 from baseline.metrics import batch_val_kl
-from baseline.model import UNet
+from baseline.model import build_model
 from baseline.utils import append_log, get_device, init_log_file, make_run_dir, save_config_copy, set_seed
 
 
@@ -196,12 +196,16 @@ def main():
         val_files, mode="val", batch_size=batch_size, num_workers=num_workers, augmentations=None, shuffle=False, drop_last=True
     )
 
-    model = UNet(
+    model = build_model(
+        name=getattr(cfg.model, "name", "unet"),
         in_channels=LandCoverData.N_CHANNELS,
         num_classes=LandCoverData.N_CLASSES,
-        num_layers=cfg.model.num_layers,
+        num_layers=getattr(cfg.model, "num_layers", 2),
         base_filters=getattr(cfg.model, "base_filters", 64),
         upconv_filters=getattr(cfg.model, "upconv_filters", 96),
+        features=getattr(cfg.model, "features", None),
+        pretrained=getattr(cfg.model, "pretrained", True),
+        decoder_channels=getattr(cfg.model, "decoder_channels", None),
     ).to(device)
 
     class_weights = getattr(cfg.loss, "class_weights", None)

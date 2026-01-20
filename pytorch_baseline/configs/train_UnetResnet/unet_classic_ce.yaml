@@ -1,0 +1,35 @@
+seed: 42
+
+data:
+  root: dataset/
+  batch_size: 32
+  num_workers: 4
+  val_samples_csv: null
+
+augmentations:
+  hflip: false
+  vflip: false
+  rotate: false
+
+model:
+  name: unet_classic
+  features: [64, 128, 256, 512]
+
+loss:
+  name: cross_entropy
+  class_weights: null  # or "inverse_frequency"
+  ignore_index: null
+  exclude_classes: [0, 1]
+  eps: 1.0e-8
+  smooth: 1.0e-6
+  kl_weight: 0.05
+  dice_weight: 0.3
+
+training:
+  epochs: 30
+  lr: 0.001
+  weight_decay: 0.0
+  lr_patience: 8
+  lr_factor: 0.5
+  xp_rootdir: experiments
+  xp_name: null
