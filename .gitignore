@@ -10,6 +10,11 @@ pytorch_baseline/dataset/
 
 pytorch_baseline/experiments/
 
+# =====================
+# notebook visualization result
+# =====================
+pytorch_baseline/notebook
+
 
 
 # ===============================
